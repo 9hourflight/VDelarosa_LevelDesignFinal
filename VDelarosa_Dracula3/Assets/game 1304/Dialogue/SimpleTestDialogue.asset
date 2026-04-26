@@ -1,0 +1,611 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8749073938879256186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add328b8b775d8c489cd8b3c46ae775b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: 54e0760a-0aed-4bc2-9633-fdbba89665c2
+  _GUIRect:
+    serializedVersion: 2
+    x: 360
+    y: 144
+    width: 220
+    height: 100
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: d4b858bac93c4434caa1caf25dc7c674, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 20
+      m_Right: 20
+      m_Top: 20
+      m_Bottom: 20
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children: []
+  _parent: {fileID: 6362569729006897623}
+  _lineText: Armor 100g
+  eventsToSend: []
+  tokensToSet: []
+  audioLine: {fileID: 0}
+--- !u!114 &-1642128727028914329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc87b97fd108f9449a131a53d128f62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: f1e25ae5-2a40-432c-97df-e58fbfdd626a
+  _GUIRect:
+    serializedVersion: 2
+    x: 855
+    y: 185
+    width: 250
+    height: 150
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: 6e0c02ec64cbfc24ea6b19182e7d7962, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 10
+      m_Right: 10
+      m_Top: 10
+      m_Bottom: 10
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children:
+  - 1124231b-d5f4-4fc6-b9e0-0818f997da52
+  _parent: {fileID: 8185382327882113884}
+  eventsToSend:
+  - eventName: GiveSoda
+    scope: 0
+  tokensToSet: []
+  tokensToModify:
+  - tokenName: Gold
+    operationtype: 2
+    amount: 10
+  _reply: I'll buy the soda
+  _fullReply: 
+  _useFullReply: 0
+  _exitsDialogue: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef4b3a975465e574c9fcce168d25e9d1, type: 3}
+  m_Name: SimpleTestDialogue
+  m_EditorClassIdentifier: 
+  canExit: 1
+  dialogueTitle: Simple Test
+  eventsToSendOnExit:
+  - eventName: 
+    scope: 0
+  tokensToModifyOnExit:
+  - tokenName: PissedOffVillagers
+    operationtype: 0
+    amount: 1
+  titleFontColor: {r: 1, g: 1, b: 1, a: 1}
+  backgroundColor: {r: 0.7114187, g: 0.45256317, b: 0.8490566, a: 1}
+  isFullScreen: 0
+  isBlocking: 1
+  containingObject: {fileID: 0}
+  dialogueEntries:
+  - {fileID: 6362569729006897623}
+  - {fileID: 4817343964440287923}
+  - {fileID: 4192627520113269295}
+  - {fileID: -8749073938879256186}
+  - {fileID: -1642128727028914329}
+  - {fileID: 8185382327882113884}
+  _hostObject: {fileID: 0}
+  _speakingCharacters: []
+--- !u!114 &4192627520113269295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79c9d4be2aae3fd41a661d3701c576c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: 4311e15a-638f-475b-a557-f487a504e806
+  _GUIRect:
+    serializedVersion: 2
+    x: 400
+    y: 381
+    width: 150
+    height: 75
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: a3119e0e47de200498da4b5badea7ae3, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 10
+      m_Right: 10
+      m_Top: 10
+      m_Bottom: 10
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children:
+  - 203282f1-a1f2-45d1-98df-4c3196ad6266
+  - affbceeb-4c8f-4c61-8dd6-1c7bed17ac65
+  - 3bfeb384-2157-45a6-a99b-235a762606cf
+  - f94a38f1-f575-44a5-8ced-39acc5ebf35c
+  - b3fdb493-9f35-4f56-a640-f8eb55b19d4b
+  _parent: {fileID: 6362569729006897623}
+  eventsToSend: []
+  tokensToSet: []
+--- !u!114 &4817343964440287923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add328b8b775d8c489cd8b3c46ae775b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: 31663665-c112-4ef5-8397-e0aa16b59fe5
+  _GUIRect:
+    serializedVersion: 2
+    x: 362
+    y: 25
+    width: 220
+    height: 100
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: d4b858bac93c4434caa1caf25dc7c674, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 20
+      m_Right: 20
+      m_Top: 20
+      m_Bottom: 20
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children: []
+  _parent: {fileID: 6362569729006897623}
+  _lineText: Soda (10g)
+  eventsToSend: []
+  tokensToSet: []
+  audioLine: {fileID: 0}
+--- !u!114 &6362569729006897623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf39d62b6f686404da304b62be2690d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: 1124231b-d5f4-4fc6-b9e0-0818f997da52
+  _GUIRect:
+    serializedVersion: 2
+    x: 43
+    y: 168
+    width: 150
+    height: 75
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: a3119e0e47de200498da4b5badea7ae3, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 10
+      m_Right: 10
+      m_Top: 10
+      m_Bottom: 10
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children:
+  - 527372ae-c83b-41a3-912a-8bee2fec397d
+  - f01cb405-d94c-439d-bfea-f08e1c08cd90
+  - d06a9517-2cf9-48c6-904a-d294130abdc8
+  - 0ce67a73-79c5-4344-accc-e908b815cc2b
+  - 1cc50382-fd6c-4e59-a66a-3191c5353f34
+  - 38164c42-196c-4610-8959-0ab3d150e58c
+  - ec00dcb5-f742-4f7e-b624-db00770b19c4
+  - 4311e15a-638f-475b-a557-f487a504e806
+  - ff77c2f9-e559-4279-9009-222ccdc78ada
+  - 31663665-c112-4ef5-8397-e0aa16b59fe5
+  - 54e0760a-0aed-4bc2-9633-fdbba89665c2
+  _parent: {fileID: -1642128727028914329}
+  eventsToSend: []
+  tokensToSet: []
+  indexOfSpeakingCharacter: 0
+--- !u!114 &8185382327882113884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 782035ec215fe954d93cf86b949b69fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entryAddress: b3fdb493-9f35-4f56-a640-f8eb55b19d4b
+  _GUIRect:
+    serializedVersion: 2
+    x: 632
+    y: 307
+    width: 150
+    height: 150
+  nodeStyle:
+    m_Name: 
+    m_Normal:
+      m_Background: {fileID: 2800000, guid: 0fbb68756356dbb43b3fec4107c9a420, type: 3}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
+    m_Hover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Active:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Focused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnNormal:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnHover:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnActive:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_OnFocused:
+      m_Background: {fileID: 0}
+      m_ScaledBackgrounds: []
+      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+    m_Border:
+      m_Left: 12
+      m_Right: 12
+      m_Top: 12
+      m_Bottom: 12
+    m_Margin:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Padding:
+      m_Left: 10
+      m_Right: 10
+      m_Top: 10
+      m_Bottom: 10
+    m_Overflow:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    m_Font: {fileID: 0}
+    m_FontSize: 0
+    m_FontStyle: 0
+    m_Alignment: 0
+    m_WordWrap: 0
+    m_RichText: 1
+    m_TextClipping: 0
+    m_ImagePosition: 0
+    m_ContentOffset: {x: 0, y: 0}
+    m_FixedWidth: 0
+    m_FixedHeight: 0
+    m_StretchWidth: 1
+    m_StretchHeight: 0
+  _children:
+  - f1e25ae5-2a40-432c-97df-e58fbfdd626a
+  _parent: {fileID: 4192627520113269295}
+  _tokenName: Gold
+  _comparison: 3
+  _valueToCompare: 10

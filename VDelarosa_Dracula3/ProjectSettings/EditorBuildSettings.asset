@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/game 1304/scenes/BasicMetricsTest.unity
+    guid: a9cc1029c1f67584b85319132dd61907
+  - enabled: 0
+    path: Assets/Scenes/testStuff.unity
+    guid: 15177be89b8147543aa58f3302674ef6
+  - enabled: 0
+    path: Assets/game 1304/scenes/House.unity
+    guid: 663a5baf5207cfc4b8f5d55fdbf5b5df
+  - enabled: 1
+    path: Assets/Dracula.unity
+    guid: 797f1c813a2e4e143bc986bf6ad553d1
+  m_configObjects: {}

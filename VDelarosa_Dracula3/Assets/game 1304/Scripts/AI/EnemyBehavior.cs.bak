@@ -1,0 +1,1155 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+using UnityEditor;
+using UnityEngine.Serialization;
+
+public enum BehaviorType { attacking, patrolling, following, fleeing, idle, none, distracted };
+public enum AttitudeType { neutral, aggressive, fearful, friendly };
+public enum NPCAttackType { none, touch, melee, rangedProjectile };
+public enum PatrolSwitchBehaviorType { pickClosest, pickFirst, pickRandom, pickSimilarIndex };
+
+[Serializable]
+public class patrolChangeEventEntry
+{
+    public string eventName;
+    public PatrolSwitchBehaviorType patrolSwitchBehavior;
+    public NavPointContainer navContainerObject;
+}
+
+[Serializable]
+public class behaviorChangeEventEntry
+{
+    public string eventName;
+    public BehaviorType behaviorToChangeTo;
+}
+
+[Serializable]
+public class attitudeChangeEventEntry
+{
+    public string eventName;
+    public AttitudeType attitudeToChangeTo;
+}
+
+[Serializable]
+public class visionRangeChangeEventEntry
+{
+    public string eventName;
+    public float newVisionRange;
+}
+
+[Serializable]
+public class followTargetChangeEventEntry
+{
+    public string eventName;
+    public GameObject newFollowTarget;
+}
+
+[Serializable]
+public class healthThresholdData
+{
+    public float healthPercent;
+    public bool changeBehavior = false;
+    public bool changeAttitude = false;
+    public BehaviorType behaviorToChangeTo;
+    public AttitudeType attitudeToChangeTo;
+}
+
+[Serializable]
+public class signalEventEntry
+{
+    public int damageThreshold = 0;
+    public bool filterByDamageType = false;
+    public comparisonOperator comparisonForThreshold = comparisonOperator.greaterThanEqual;
+    public signalTypes damageType = signalTypes.genericHazard;
+    public List<eventPackage> eventsToSend;
+    [Header("Deprecated")]
+    [FormerlySerializedAs("eventsToSend")]
+    public List<string> oldEventsToSend;
+    //public bool onlySendEventsToSameObject = false;
+}
+
+[Serializable]
+public class damageMultiplier
+{
+    public float multiplier = 1;
+    public signalTypes damageType;
+    public damageMultiplier(signalTypes type, float amount)
+    {
+        multiplier = amount;
+        damageType = type;
+    }
+}
+
+
+public class EnemyBehavior : MonoBehaviour
+{
+    [Header("Mortality")]
+    public GameObject objectToDrop;
+    public int maxHealth = 100;
+    private int _currentHealth;
+    public bool ragdollOnDeath = true;
+    public List<eventPackage> eventsToSendOnDeath;
+    [Header("Deprecated")]
+    public List<string> eventsToFireOnDeath;
+    public bool isAlive
+    {
+        get
+        {
+            return (_currentHealth > 0);
+        }
+    }
+    public List<signalEventEntry> damageEvents;
+    public List<damageMultiplier> damageTypeMultipliers;
+    public bool isInvincible = false;
+    [Space(5)]
+    [Header("Movement")]
+    public float patrolSpeed = 5.0f;
+    public float investigateSpeed = 7.0f;
+    public float attackingSpeed = 10.0f;
+    public float fleeingSpeed = 10.0f;
+    private bool isFlying = false;
+
+    [Space(5)]
+    [Header("Behavior")]
+    //public
+    public BehaviorType startingBehavior;
+    public BehaviorType currentBehavior { get { return _currentBehavior; } }
+    [Tooltip("Events that will change this NPC's behavior")]
+    public List<behaviorChangeEventEntry> behaviorChangeEvents;
+    public AttitudeType attitudeTowardsPlayer = AttitudeType.neutral;
+    [Tooltip("Events that will change how this NPC reacts to the player")]
+    public List<attitudeChangeEventEntry> attitudeChangeEvents;
+    private BehaviorType _currentBehavior, _previousBehavior, _behaviorLastFrame;
+    //    private PatrollingNavAgentBehavior patrolBehavior;
+    public GameObject followFleeTarget;
+    public float followDistance = 5.0f;
+    public List<followTargetChangeEventEntry> followDifferentTargetEvents;
+    [Tooltip("Nav container object that contains this character's patrol information")]
+    public List<patrolChangeEventEntry> patrolRouteChangeEvents;
+    public NavPointContainer navContainerObject;
+    private List<navPoint> navPoints;
+    private NavMeshAgent agent;
+    private FlyingLocomotionBehavior flyBehavior;
+    private Vector3 fleeDestination;
+    private int currentPointIndex;
+    private int patrolEventsToFireIndex;
+    private int pointCount;
+    private navBehavior patrolType;
+    private int pingPongDir = 1;
+    private float patrolWaitTimer = 0f;
+    public List<healthThresholdData> healthLevelChanges;
+    public Faction faction;
+
+    [Space(5)]
+    [Header("Attacking")]
+    public NPCAttackType attackType = NPCAttackType.touch;
+    public GameObject bulletPrefab;
+    [Tooltip("The time between acquiring a target and attacking. Min-max range.")]
+    public int attackWindupMax;
+    [Tooltip("The time between acquiring a target and attacking. Min-max range.")]
+    public int attackWindupMin;
+    [Tooltip("The time between attacks. Min-max range.")]
+    public int attackcoolDownMin;
+    [Tooltip("The time between attacks. Min-max range.")]
+    public int attackcoolDownMax;
+    [Tooltip("Only used if attack mode is ranged. Set to 0 for unlimited range.")]
+    public float rangedAttackMaxDistance = 10f;
+    [Tooltip("Only used if attack mode is ranged.")]
+    public float rangedAttackMinDistance = 0f;
+    private float currentAttackCooldown = 0f;
+    public AudioClip rangedAttackSound;
+    public AudioClip meleedAttackSound;
+
+    [Space(5)]
+    [Header("Suspicion")]
+    public float awarenessMeterUnawareToInvestigate = 5.0f;
+    public float awarenessMeterInvestigateToBusted = 7.5f;
+    public float idleSenseRate = 5.0f;
+    public float suspiciousSenseRate = 10.0f;
+    public float veryNearSenseMultiplier = 5f;
+    public float nearSenseMultiplier = 2f;
+    public float farSenseMultiplier = 0.75f;
+    public float veryFarSenseMultiplier = 0.5f;
+    public float senseBleedOffRate = 1.0f;
+    private float currentSuspicion = 0;
+    public float maximumSuspicion = 15f;
+    [Tooltip("This means that the AI will always know where the player is and won't lose track.")]
+    public bool hasPsychicAwarenessOfPlayer = false;
+    public AudioClip soundToPlayOnBusted;
+    private AudioSource enemyAudioSource;
+    public GameObject suspicionIndicator;
+    public GameObject alertedIndicator;
+
+    [Space(5)]
+    [Header("Senses")]
+    public float patrolFOV = 100.0f;
+    public float investigateFOV = 110.0f;
+    public float pursuitFOV = 130.0f;
+    //TODO: add peripheral cone
+    private bool _playerInSight;
+    public bool playerInSight { get { return _playerInSight; } }
+    public Vector3 personalLastSighting;        
+    private Vector3 previousSighting;
+    private GameObject player;
+    private SphereCollider visionSphere;
+    public List<visionRangeChangeEventEntry> visionRadiusChangeEvents;
+
+    [Space(5)]
+    [Header("Fleeing")]
+    public float fleeRadius = 5.0f;
+    public List<GameObject> fleePoints;
+    private GameObject nextFleeTarget, currentFleeTarget;
+
+    [Space(5)]
+    [Header("Distractions")]
+    public float distractionCooldownMin = 5f;
+    public float distractionCooldownMax = 10f;
+    private NPCDistractor currentDistraction;
+    private float currentDistractionCooldown = 0f;
+    private float distractionWaitTimer = 0f;
+
+    //framerate savers
+    int timer = 0;
+    int interval = 4;
+
+    public void updatePlayerRef()
+    {
+        //TODO: Phase this out. The player is not unique or important
+        if(player==null)
+        player = GameObject.FindGameObjectWithTag("Player");
+    }
+
+    void Awake()
+    {
+        //Initialize everything
+        //GameManager.registerAI(this);
+        NPCManager.registerAI(this);
+        updatePlayerRef();
+        _currentHealth = maxHealth;
+        _currentBehavior = startingBehavior;        
+        
+
+        
+        player = GameObject.FindGameObjectWithTag("Player");
+        enemyAudioSource = GetComponent<AudioSource>();
+        foreach (SphereCollider sc in GetComponents<SphereCollider>())
+        {
+            if (sc.isTrigger == true)
+                visionSphere = sc;
+        }
+
+        //Hide the indicators for the NPCs suspicion
+        HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+        HelperFunctions.hideObjectAndChildren(alertedIndicator);
+
+        agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+        {
+            flyBehavior = GetComponent<FlyingLocomotionBehavior>();
+            if (flyBehavior != null)
+                isFlying = true;
+        }
+        setPatrol(navContainerObject);
+
+
+        //TODO: Just use SetBehavior for this and let it do the heavy lifting
+        switch (_currentBehavior)
+        {
+            case BehaviorType.attacking:
+                setAgentSpeed(attackingSpeed);                
+                break;
+            case BehaviorType.patrolling:
+                setAgentSpeed(patrolSpeed);                
+                GoToNextPoint();
+                break;
+            case BehaviorType.following:
+                setAgentSpeed(patrolSpeed);
+                setAgentDestination(followFleeTarget.transform.position);                
+                InvokeRepeating("followTarget", 0f, 0.25f);
+                break;
+            case BehaviorType.fleeing:
+                setAgentSpeed(fleeingSpeed);                
+                break;
+        }
+        _previousBehavior = BehaviorType.none;
+        _behaviorLastFrame = BehaviorType.none;
+        _playerInSight = false; // hasPsychicAwarenessOfPlayer;
+        if (hasPsychicAwarenessOfPlayer)
+            currentSuspicion = awarenessMeterInvestigateToBusted;
+
+    }
+    
+
+    private void OnDrawGizmos()
+    {
+        if (Application.isPlaying)
+        {
+          /*  foreach (SphereCollider sc in GetComponents<SphereCollider>())
+            {
+                if (sc.isTrigger == true)
+                    visionSphere = sc;
+            }
+            Gizmos.matrix = Matrix4x4.Rotate(Quaternion.Euler(transform.forward));
+            Gizmos.DrawFrustum(transform.position, 45, visionSphere.radius, 0, 1.5f);
+            
+         */
+         
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if(navContainerObject != null)
+        {
+            Handles.color = Color.blue;
+            Handles.DrawDottedLine(transform.position, navContainerObject.gameObject.transform.position, 2.0f);
+            navContainerObject.drawPatrolGizmos();
+        }
+    }
+    void Start()
+    {
+        foreach (attitudeChangeEventEntry acee in attitudeChangeEvents)
+        {
+            if (acee.eventName != "")
+                EventRegistry.AddEvent(acee.eventName, changeAttitudeOnEvent);
+        }
+        foreach (behaviorChangeEventEntry bcee in behaviorChangeEvents)
+        {
+            if (bcee.eventName != "")
+                EventRegistry.AddEvent(bcee.eventName, changeBehaviorOnEvent);
+        }
+        foreach (followTargetChangeEventEntry bcee in followDifferentTargetEvents)
+        {
+            if (bcee.eventName != "")
+                EventRegistry.AddEvent(bcee.eventName, changeFollowTargetEvent);
+        }
+        foreach (visionRangeChangeEventEntry vcee in visionRadiusChangeEvents)
+        {
+            if (vcee.eventName != "")
+                EventRegistry.AddEvent(vcee.eventName, changeVisionRangeEvent);
+        }
+        foreach (patrolChangeEventEntry pcee in patrolRouteChangeEvents)
+        {
+            if (pcee.eventName != "")
+                EventRegistry.AddEvent(pcee.eventName, patrolChangeEvent);
+        }
+
+    }
+
+    public void changeBehaviorOnEvent(string eventName, GameObject obj)
+    {
+        if ((obj != null) && (obj != this.gameObject))
+            return;
+        foreach (behaviorChangeEventEntry bcee in behaviorChangeEvents)
+        {
+            if (bcee.eventName == eventName)
+            {
+                setBehavior(bcee.behaviorToChangeTo);
+            }
+        }
+    }
+
+    public void changeAttitudeOnEvent(string eventName, GameObject obj)
+    {
+        if ((obj != null) && (obj != this.gameObject))
+            return;
+        foreach (attitudeChangeEventEntry ace in attitudeChangeEvents)
+        {
+            if (ace.eventName == eventName)
+            {
+                setAttitude(ace.attitudeToChangeTo);
+                //attitudeTowardsPlayer = ace.attitudeToChangeTo;
+                //setAttitude(ace.attitudeToChangeTo);
+            }
+        }
+    }
+
+    public void changeFollowTargetEvent(string eventName, GameObject obj)
+    {
+        if ((obj != null) && (obj != this.gameObject))
+            return;
+        foreach (followTargetChangeEventEntry ftce in followDifferentTargetEvents)
+        {
+            if (ftce.eventName == eventName)
+            {
+                followFleeTarget = ftce.newFollowTarget;
+            }
+        }
+    }
+
+    public void changeVisionRangeEvent(string eventName, GameObject obj)
+    {
+        if ((obj != null) && (obj != this.gameObject))
+            return;
+        foreach (visionRangeChangeEventEntry vce in visionRadiusChangeEvents)
+        {
+            if ((vce.eventName == eventName) && (visionSphere != null))
+            {
+                visionSphere.radius = vce.newVisionRange;
+            }
+        }
+    }
+
+    public void patrolChangeEvent(string eventName, GameObject obj)
+    {
+        if ((obj != null) && (obj != this.gameObject))
+            return;
+        foreach (patrolChangeEventEntry pce in patrolRouteChangeEvents)
+        {
+            if (pce.eventName == eventName)
+            {
+                setPatrol(pce.navContainerObject, pce.patrolSwitchBehavior);
+                if (currentBehavior == BehaviorType.patrolling)
+                    GoToNextPoint();
+            }
+        }
+    }
+
+    private void setPatrol(NavPointContainer navContainer, PatrolSwitchBehaviorType psb = PatrolSwitchBehaviorType.pickFirst)
+    { //Patrol stuff
+        int psbIndex = 0;
+        int oldNavIndex = currentPointIndex;
+        NavPointContainer npc = null;
+        if (navContainer != null)
+            npc = navContainer.GetComponent<NavPointContainer>();
+        else
+        {
+            _currentBehavior = BehaviorType.idle;
+            return;
+        }
+        if (npc != null)
+        {
+            navPoints = npc.navPoints;
+            if(navPoints.Count == 0)
+            {
+                _currentBehavior = BehaviorType.idle;
+                return;
+            }
+            patrolType = npc.navigationBehaviorType;
+        }
+        else
+        {
+            _currentBehavior = BehaviorType.idle;
+            return;
+        }
+        switch (psb)
+        {
+            case PatrolSwitchBehaviorType.pickFirst:
+                psbIndex = 0;
+                break;
+            case PatrolSwitchBehaviorType.pickClosest:
+                int counter = -1;
+                int closestIndex = 0;
+                float dist = 0f;
+                float closestDistance = 1000000.0f;
+                foreach (navPoint np in navPoints)
+                {
+                    counter++;
+                    dist = Vector3.Distance(np.navPointObject.transform.position, gameObject.transform.position);
+                    if (dist < closestDistance)
+                    {
+                        closestIndex = counter;
+                        closestDistance = dist;
+                    }
+                }
+                psbIndex = closestIndex;
+                break;
+            case PatrolSwitchBehaviorType.pickRandom:
+                psbIndex = UnityEngine.Random.Range(0, navPoints.Count);
+                break;
+            case PatrolSwitchBehaviorType.pickSimilarIndex:
+                psbIndex = oldNavIndex % navPoints.Count;
+                break;
+        }
+
+        if (patrolType == navBehavior.wander)
+            currentPointIndex = UnityEngine.Random.Range(0, navPoints.Count);
+        else
+            currentPointIndex = psbIndex;
+
+    }
+
+    public void setAttitude(AttitudeType newAttitude)
+    {
+        attitudeTowardsPlayer = newAttitude;
+        if ((currentBehavior == BehaviorType.attacking) && ((attitudeTowardsPlayer == AttitudeType.friendly) || (attitudeTowardsPlayer == AttitudeType.neutral)))
+            setBehavior(_previousBehavior);
+        if (attitudeTowardsPlayer == AttitudeType.fearful)
+            setBehavior(BehaviorType.fleeing);
+
+        if ((attitudeTowardsPlayer == AttitudeType.friendly) || (attitudeTowardsPlayer == AttitudeType.neutral))
+            wipeSuspicion();
+    }
+
+    public void setBehavior(BehaviorType newBehavior)
+    {
+        //TODO: add some state machine transition stuff here if needed
+        _previousBehavior = currentBehavior;
+        _currentBehavior = newBehavior;
+        if (_previousBehavior == BehaviorType.following)
+            CancelInvoke();
+        if (currentBehavior == BehaviorType.attacking)
+        {
+            currentSuspicion = awarenessMeterInvestigateToBusted;
+        }
+        if (currentBehavior != BehaviorType.following)
+        {
+            if (_previousBehavior == BehaviorType.following)
+                CancelInvoke();
+        }
+        if (currentBehavior == BehaviorType.following)
+        {
+            if (_previousBehavior != BehaviorType.following)
+            {
+                setAgentSpeed(patrolSpeed);
+                setAgentDestination(followFleeTarget.transform.position);                
+                InvokeRepeating("followTarget", 0f, 0.25f);
+            }
+        }
+        if (currentBehavior != BehaviorType.fleeing)
+        {
+            if (_previousBehavior == BehaviorType.fleeing)
+                CancelInvoke();
+        }
+        if (currentBehavior == BehaviorType.idle)
+        {
+            setAgentStopped(true);            
+        }
+        if ((currentBehavior == BehaviorType.patrolling) && (_previousBehavior != BehaviorType.patrolling))
+        {
+            setAgentSpeed(patrolSpeed);
+            //setPatrol(navContainerObject);
+            GoToNextPoint();
+        }
+
+    }
+
+    public void Damage(int damageAmount, signalTypes damageType)
+    {
+        if (isInvincible)
+            return;
+        //TODO: add health change threshold events here
+        //TODO: add suspicion/busted on damage source here
+        GameObject dropObject;
+        bool damagePassesEventCheck = false;
+        if (_currentHealth <= 0)
+            return;
+        foreach (damageMultiplier dm in damageTypeMultipliers)
+        {
+            if (damageType == dm.damageType)
+                damageAmount = (int)(damageAmount * dm.multiplier);
+        }
+
+        _currentHealth -= damageAmount;
+        foreach (signalEventEntry dee in damageEvents)
+        {
+            damagePassesEventCheck = false;
+            if (damageAmount >= dee.damageThreshold)
+            {
+                if (dee.filterByDamageType == false || ((dee.filterByDamageType) && (dee.damageType == damageType)))
+                {
+                    switch (dee.comparisonForThreshold)
+                    {
+                        case comparisonOperator.Equal:
+                            damagePassesEventCheck = (dee.damageThreshold == damageAmount);
+                            break;
+                        case comparisonOperator.greaterThan:
+                            damagePassesEventCheck = (damageAmount > dee.damageThreshold);
+                            break;
+                        case comparisonOperator.greaterThanEqual:
+                            damagePassesEventCheck = (damageAmount >= dee.damageThreshold);
+                            break;
+                        case comparisonOperator.lessThan:
+                            damagePassesEventCheck = (damageAmount < dee.damageThreshold);
+                            break;
+                        case comparisonOperator.lessThanEqual:
+                            damagePassesEventCheck = (damageAmount <= dee.damageThreshold);
+                            break;
+                        case comparisonOperator.notEqual:
+                            damagePassesEventCheck = (dee.damageThreshold != damageAmount);
+                            break;
+                    }
+                    if (damagePassesEventCheck)
+                    {
+                        foreach (string s in dee.oldEventsToSend)
+                            EventRegistry.SendEvent(s);
+                        foreach (eventPackage ep in dee.eventsToSend)
+                            EventRegistry.SendEvent(ep, this.gameObject);
+                    }
+                }
+            }
+        }
+        if (_currentHealth <= 0)
+        {
+            HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+            HelperFunctions.hideObjectAndChildren(alertedIndicator);
+            CancelInvoke();
+            if (objectToDrop != null)
+            {
+                dropObject = Instantiate(objectToDrop);
+                dropObject.transform.position = gameObject.transform.position;
+            }
+            if (ragdollOnDeath)
+            {
+                setAgentEnabled(false);
+                Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    if (isFlying)
+                        rb.useGravity = true;
+                    Vector3 currentVel = rb.velocity;
+                    rb.isKinematic = false;
+                    rb.AddRelativeTorque(new Vector3(30, 0, 0));
+                    rb.AddForceAtPosition(transform.forward * 20 + new Vector3(0, 1, 0), transform.position + new Vector3(0, 0.5f, 0));
+                }
+                PhysicsCarryObject pco = gameObject.GetComponent<PhysicsCarryObject>();
+                if (pco != null)
+                {
+                    pco.enabled = true;
+                }
+                setBehavior(BehaviorType.none);
+            }
+            else
+                GameObject.Destroy(gameObject);
+            foreach (string s in eventsToFireOnDeath)
+            {
+                EventRegistry.SendEvent(s);
+            }
+            foreach (eventPackage ep in eventsToSendOnDeath)
+            {
+                EventRegistry.SendEvent(ep,this.gameObject);
+            }
+        }
+    }
+
+    public void wipeSuspicion()
+    {
+        currentSuspicion = 0;
+    }
+
+    void Update()
+    {
+        
+        if (timer % interval != 0)
+        {
+            timer++;
+            return;
+        }
+        else
+            timer = 0;
+
+        updatePlayerRef();
+        //paused or dead. Nothing to do here
+        if ((GameManager.isPaused) || (_currentHealth <= 0))
+            return;
+
+        if (currentAttackCooldown > 0)
+        {
+            currentAttackCooldown -= Time.deltaTime;
+            if (currentAttackCooldown < 0)
+                currentAttackCooldown = 0;
+        }
+
+        if (currentBehavior != BehaviorType.distracted)
+        {
+            currentDistractionCooldown -= Time.deltaTime;
+            if (currentDistractionCooldown < 0)
+                currentDistractionCooldown = 0;
+        }
+
+        if ((playerInSight) || (hasPsychicAwarenessOfPlayer))
+        {
+            //The player is in sight, but we aren't currently engaged with attacking them or running from them
+            if ((currentBehavior != BehaviorType.attacking) && (currentBehavior != BehaviorType.fleeing))
+            {
+                float playerDistance = getDistanceToPlayer();
+                float distanceMultiplier = 1f;
+                if (playerDistance >= visionSphere.radius * 0.75f)
+                {
+                    distanceMultiplier = veryFarSenseMultiplier;
+                }
+
+                if ((playerDistance >= visionSphere.radius * 0.5f) && (playerDistance < visionSphere.radius * 0.75f))
+                {
+                    distanceMultiplier = farSenseMultiplier;
+                }
+
+                if ((playerDistance >= visionSphere.radius * 0.25f) && (playerDistance < visionSphere.radius * 0.5f))
+                {
+                    distanceMultiplier = nearSenseMultiplier;
+                }
+
+                if (playerDistance < visionSphere.radius * 0.25f)
+                {
+                    distanceMultiplier = veryNearSenseMultiplier;
+                }
+
+
+
+                currentSuspicion += Time.deltaTime * idleSenseRate * player.GetComponent<GAME1304PlayerController>().currentVisibility * distanceMultiplier;
+                if (currentSuspicion >= awarenessMeterUnawareToInvestigate)
+                {
+                    if ((attitudeTowardsPlayer == AttitudeType.aggressive) || (attitudeTowardsPlayer == AttitudeType.fearful))
+                        HelperFunctions.showObjectAndChildren(suspicionIndicator);
+                }
+                if (currentSuspicion >= maximumSuspicion)
+                    currentSuspicion = maximumSuspicion;
+                if (currentSuspicion > awarenessMeterInvestigateToBusted)
+                {
+                    if ((attitudeTowardsPlayer == AttitudeType.aggressive) || (attitudeTowardsPlayer == AttitudeType.fearful))
+                        HelperFunctions.showObjectAndChildren(alertedIndicator);
+                    HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+                    if ((soundToPlayOnBusted != null) && (enemyAudioSource != null))
+                    {
+                        enemyAudioSource.clip = soundToPlayOnBusted;
+                        enemyAudioSource.Play();
+                    }
+                    if (attitudeTowardsPlayer == AttitudeType.aggressive)
+                        setBehavior(BehaviorType.attacking);
+                    if (attitudeTowardsPlayer == AttitudeType.fearful)
+                        setBehavior(BehaviorType.fleeing);
+                }
+            }
+        }
+        else
+        {
+            //Player is out of sight, so cool down the suspicion meter
+            currentSuspicion -= Time.deltaTime * senseBleedOffRate;
+            if (currentSuspicion < awarenessMeterInvestigateToBusted)
+            {
+                if((attitudeTowardsPlayer == AttitudeType.aggressive)|| (attitudeTowardsPlayer == AttitudeType.fearful))
+                    HelperFunctions.showObjectAndChildren(suspicionIndicator);
+                HelperFunctions.hideObjectAndChildren(alertedIndicator);
+            }
+            if (currentSuspicion < awarenessMeterUnawareToInvestigate)
+            {
+                HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+            }
+            if (currentSuspicion < 0)
+                currentSuspicion = 0;
+            if ((currentBehavior == BehaviorType.attacking) || (currentBehavior == BehaviorType.fleeing))
+
+            {
+                if (currentSuspicion <= awarenessMeterUnawareToInvestigate)
+                {
+                    HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+                    HelperFunctions.hideObjectAndChildren(alertedIndicator);
+                    currentSuspicion = 0; //TODO: rethink this
+                    setBehavior(_previousBehavior);
+                    CancelInvoke();
+                }
+            }
+        }
+
+        switch (currentBehavior)
+        {
+            case BehaviorType.idle: //do nothing, you're idle
+                break;
+            case BehaviorType.attacking:
+                setAgentSpeed(attackingSpeed);
+                //TODO: incorporate the actual attack types
+                if (_behaviorLastFrame != BehaviorType.attacking)
+                {
+                    InvokeRepeating("chasePlayer", 0f, 0.25f);
+                }
+                break;
+            case BehaviorType.fleeing:
+                setAgentSpeed(fleeingSpeed);
+                if (_behaviorLastFrame != BehaviorType.fleeing)
+                {
+                    setFleePoint();
+                    InvokeRepeating("fleePlayer", 0f, 0.25f);
+                }
+                break;
+            case BehaviorType.following:
+                break;
+            case BehaviorType.patrolling:
+                /*if (_behaviorLastFrame != BehaviorType.patrolling)
+                {
+                    setAgentSpeed(patrolSpeed);                    
+                    HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+                    HelperFunctions.hideObjectAndChildren(alertedIndicator);
+                    GoToNextPoint();
+                }*/
+                if (!getAgentPathPending() && getAgentRemainingDistance() < 0.5f)
+                {
+                    patrolWaitTimer += Time.deltaTime;
+                    if (patrolWaitTimer >= navPoints[currentPointIndex].pauseDuration)
+                    {
+                        //TODO: make this more efficient. take the assumptions out of the chain somewhere else
+                        if (navPoints != null)
+                        {
+                            if (navPoints.Count > 0)
+                            {
+                                if (navPoints[patrolEventsToFireIndex] != null)
+                                {                                                                     
+                                    foreach (eventPackage ep in navPoints[patrolEventsToFireIndex].eventsToSend)
+                                        EventRegistry.SendEvent(ep, gameObject);                                 
+                                }
+                            }
+                        }
+                        GoToNextPoint();
+                    }
+                }
+                break;
+            case BehaviorType.distracted:
+                {
+                    //NPC has arrived at distraction
+                    if (!getAgentPathPending() && getAgentRemainingDistance() <= currentDistraction.minDistance) 
+                    {
+                        if(currentDistraction.NPCLookTarget != null)
+                        {
+                            Vector3 tempVec = currentDistraction.NPCLookTarget.transform.position - transform.position;
+                            tempVec.y = 0;
+                            transform.rotation  = Quaternion.LookRotation(tempVec, Vector3.up);                            
+                        }
+                        //TODO: set NPC senses dulled
+                        distractionWaitTimer += Time.deltaTime;
+                        if (distractionWaitTimer >=  currentDistraction.currentDuration)
+                        {
+                            setBehavior(_previousBehavior);
+                            currentDistraction.finishDistraction();
+                            currentDistractionCooldown = UnityEngine.Random.Range(distractionCooldownMin, distractionCooldownMax);
+                        }
+                    }
+                }
+                break;
+        }
+        /**/
+
+        _behaviorLastFrame = currentBehavior;
+    }
+
+    void followTarget()
+    {
+        if (currentBehavior == BehaviorType.following)
+        {
+            setAgentDestination(followFleeTarget.transform.position);            
+            //if(!agent.pathPending && agent.remainingDistance >= followDistance)
+            if (getAgentRemainingDistance() >= followDistance)
+            {
+                setAgentSpeed(patrolSpeed);                
+            }
+            else
+            {
+                setAgentSpeed(0);
+            }
+        }
+    }
+
+    float getDistanceToPlayer()
+    {
+        if (player != null)
+            return ((transform.position - player.transform.position).magnitude);
+        else
+            return (float.PositiveInfinity);
+    }
+
+    public bool canBeDistracted()
+    {
+        return ((currentDistractionCooldown == 0) && ((currentBehavior == BehaviorType.idle) || (currentBehavior == BehaviorType.patrolling)));
+
+    }
+
+    public void startDistraction(NPCDistractor npcd)
+    {
+        setAgentSpeed(patrolSpeed);
+        currentDistraction = npcd;
+        setBehavior(BehaviorType.distracted);
+        distractionWaitTimer = 0f;
+        setAgentDestination(currentDistraction.NPCPlacementTarget.position);
+    }
+
+    public void endDistraction()
+    {
+
+        currentDistractionCooldown = UnityEngine.Random.Range(distractionCooldownMin, distractionCooldownMax);
+        setBehavior(_previousBehavior);
+    }
+
+    void chasePlayer()
+    {
+        switch (attackType)
+        {
+            case NPCAttackType.touch:
+                setAgentDestination(player.transform.position);                
+                break;
+            case NPCAttackType.rangedProjectile:
+                if ((getDistanceToPlayer() <= rangedAttackMaxDistance) && playerInSight)
+                {
+                    //agent.isStopped = true;
+                    Vector3 direction = (player.transform.position - transform.position).normalized;
+                    Quaternion lookRotation = Quaternion.LookRotation(direction);
+                    transform.rotation = lookRotation;
+                    if (currentAttackCooldown <= 0)
+                    {
+                        fireProjectileAtPlayer();
+                    }//TODO: what does it do if it's in range but outside of the cooldown?
+
+
+                }
+                else
+                {
+                    //if(agent.remainingDistance > 0.5f)
+                    reacquire();
+                }
+                break;
+            case NPCAttackType.melee:
+                break;
+        }
+
+
+    }
+
+    void reacquire()
+    {
+        Vector3 destinationPosition;
+        Vector3 destinationOffset;
+        Vector2 horizontalOffset;
+
+        horizontalOffset = UnityEngine.Random.insideUnitCircle * 2f;
+        destinationOffset = new Vector3(horizontalOffset.x, 0, horizontalOffset.y);
+
+        destinationPosition = player.transform.position + destinationOffset;
+
+        NavMeshHit hit;
+        NavMesh.SamplePosition(destinationPosition, out hit, 5.0f, 1);
+        destinationPosition = hit.position;
+
+        setAgentDestination(destinationPosition);        
+        //nav.SetDestination(player.transform.position + ((transform.position - player.transform.position).normalized * rangedAttackMaxDistance));
+    }
+
+    void fireProjectileAtPlayer()
+    {
+        //TODO: turn to face player
+        //TODO: wait for windup
+        GameObject bulletObj = GameObject.Instantiate(bulletPrefab, transform.position + transform.forward * 1.5f, Quaternion.identity);
+        bulletObj.transform.parent = null;
+        if (bulletObj.GetComponent<BulletBehavior>() != null)
+        {
+            bulletObj.GetComponent<BulletBehavior>().init(transform.forward);
+            currentAttackCooldown = attackcoolDownMax;
+            if ((rangedAttackSound != null) && (enemyAudioSource != null))
+            {
+                enemyAudioSource.clip = rangedAttackSound;
+                enemyAudioSource.Play();
+            }
+        }
+        //TODO: make this a random value between the min and max
+    }
+
+    void setFleePoint()
+    {
+        //TODO: make this not terrible
+        Vector3 fleePos;
+        Vector2 fleeOffset;
+        if (fleePoints.Count == 0)
+        {
+            float dist = (transform.position - player.transform.position).magnitude;
+            fleeOffset = (UnityEngine.Random.insideUnitCircle).normalized * dist * 2;
+            fleePos = transform.position + new Vector3(fleeOffset.x, 0, fleeOffset.y);
+
+            NavMeshHit hit;
+            NavMesh.SamplePosition(fleePos, out hit, 10.0f, 1);
+            setAgentDestination(hit.position);            
+        }
+        else
+        {
+            setAgentDestination(getFurthestFleePointFromPlayer());            
+        }
+    }
+
+    Vector3 getFurthestFleePointFromPlayer()
+    {
+        Vector3 playerLoc = player.transform.position;
+        Vector3 farthestPoint = transform.position;
+        float dist = 0;
+        foreach (GameObject go in fleePoints)
+        {
+            if ((go.transform.position - playerLoc).magnitude > dist)
+            {
+                farthestPoint = go.transform.position;
+                dist = (go.transform.position - playerLoc).magnitude;
+            }
+        }
+        return farthestPoint;
+    }
+
+    void fleePlayer()
+    {
+        if (getAgentRemainingDistance() <= 1.0f)
+            setFleePoint();
+    }
+
+    void OnTriggerStay(Collider other)
+    {
+        if (GameManager.isPaused || _currentHealth <= 0)
+            return;
+        float testFOV;
+        if (other.gameObject == player)
+        {
+            if (currentBehavior == BehaviorType.attacking)
+                testFOV = pursuitFOV;
+            else
+                testFOV = patrolFOV;
+            //default "player in sight" before re-checking to see if the player is actually in sight
+            _playerInSight = false;
+            Vector3 direction = other.transform.position - transform.position;
+            float angle = Vector3.Angle(direction, transform.forward);
+
+            if (angle < (testFOV * 0.5f))
+            {
+                RaycastHit hit;
+                //TODO: offset the raycast by the character's half height instead of just 1
+                LayerMask mask = LayerMask.GetMask("Player");
+                if (Physics.Raycast(transform.position + transform.up, direction.normalized, out hit, visionSphere.radius)) //,mask.value))
+                {
+                    if (hit.collider.gameObject == player)
+                    {
+                        _playerInSight = true;
+
+                    }
+                }
+                if (Physics.Raycast(transform.position, direction.normalized, out hit, visionSphere.radius)) //,mask.value))
+                {
+                    if (hit.collider.gameObject == player)
+                    {
+                        _playerInSight = true;
+
+                    }
+                }
+            }
+        }
+    }
+
+    void GoToNextPoint()
+    {
+        //if we've been given bad data, exit
+        //should probably pop an assert here as well
+        setAgentStopped(false);        
+        patrolWaitTimer = 0;
+        if ((navPoints == null)||(navPoints.Count==null))
+        {
+            setBehavior(BehaviorType.idle);
+            return;
+        }
+        if (navPoints.Count <= 0)
+        {
+            setBehavior(BehaviorType.idle);
+            return;
+        }
+        setAgentDestination(navPoints[currentPointIndex].navPointObject.transform.position);        
+        patrolEventsToFireIndex = currentPointIndex;
+        switch (patrolType)
+        {
+            case navBehavior.patrolLoop:
+                currentPointIndex += 1;
+                if (currentPointIndex >= navPoints.Count)
+                    currentPointIndex = 0;
+                break;
+            case navBehavior.patrolPingPong:
+                currentPointIndex += pingPongDir;
+                if (currentPointIndex >= navPoints.Count)
+                {
+                    pingPongDir = -1;
+                    currentPointIndex = navPoints.Count - 2;
+                }
+                else if (currentPointIndex < 0)
+                {
+                    pingPongDir = 1;
+                    currentPointIndex = 1;
+                }
+                break;
+            case navBehavior.wander:
+                currentPointIndex = UnityEngine.Random.Range(0, navPoints.Count);
+                break;
+        }
+    }
+
+    public void setAgentStopped(bool isStopped)
+    {
+        if (!isFlying)
+        {
+            agent.isStopped = isStopped;
+        }
+        else
+        {
+            if (flyBehavior != null)
+                flyBehavior.setIsStopped(isStopped);
+        }
+    }
+
+    public void setAgentSpeed(float speed)
+    {
+        if(!isFlying)
+            agent.speed = speed;
+        else
+        {
+            if (flyBehavior != null)
+                flyBehavior.setSpeed(speed);
+        }
+    }
+
+    public void setAgentDestination(Vector3 destination)
+    {
+        if(!isFlying)
+        {
+            if (agent == null)
+                Debug.Log(gameObject.name + " has no agent!");
+            else
+                if (!agent.SetDestination(destination))
+                    Debug.Log(gameObject.name + " has problem navigating!");
+        }
+        else
+        {
+            if (flyBehavior != null)
+                flyBehavior.setDestination(destination);
+        }
+    }
+
+    public float getAgentRemainingDistance()
+    {
+        if (!isFlying)
+        {
+            return agent.remainingDistance;
+        }
+        else
+        {
+            if (flyBehavior != null)
+                return flyBehavior.getRemainingDistance();            
+        }
+        return -1;
+    }
+
+    public bool getAgentPathPending()
+    {
+        if (!isFlying)
+        {
+            return agent.pathPending;
+        }
+        else
+        {
+            if (flyBehavior != null)
+                return flyBehavior.getPathPending();
+        }
+        
+        return true;
+    }
+
+    public void setAgentEnabled(bool enabled)
+    {
+        if (!isFlying)
+        {
+            agent.enabled = enabled;
+        }
+        else
+        {
+            if (flyBehavior != null)
+                flyBehavior.enabled = enabled;
+        }        
+    }
+}

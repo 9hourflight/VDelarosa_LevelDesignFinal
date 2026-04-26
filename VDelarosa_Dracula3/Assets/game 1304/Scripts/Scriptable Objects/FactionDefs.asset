@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 061a2b4e27913994aa84a5878906252a, type: 3}
+  m_Name: FactionDefs
+  m_EditorClassIdentifier: 
+  factionDefinitions:
+  - faction: 1
+    factionName: Enemies
+    factionRelationships:
+    - targetFaction: 0
+      attitude: 2
+    - targetFaction: 1
+      attitude: 0
+    - targetFaction: 2
+      attitude: 2
+    - targetFaction: 3
+      attitude: 1
+  - faction: 2
+    factionName: Friendlies
+    factionRelationships:
+    - targetFaction: 0
+      attitude: 0
+    - targetFaction: 1
+      attitude: 2
+    - targetFaction: 2
+      attitude: 0
+    - targetFaction: 3
+      attitude: 1
+  - faction: 3
+    factionName: Bystanders
+    factionRelationships:
+    - targetFaction: 0
+      attitude: 1
+    - targetFaction: 1
+      attitude: 1
+    - targetFaction: 2
+      attitude: 1
+    - targetFaction: 3
+      attitude: 1
