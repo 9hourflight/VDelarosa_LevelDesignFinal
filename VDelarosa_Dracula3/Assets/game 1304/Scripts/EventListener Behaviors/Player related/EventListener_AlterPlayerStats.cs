@@ -21,6 +21,7 @@ public class EventListener_AlterPlayerStats: MonoBehaviour
     {
         if ((obj != null) && (obj != this.gameObject))
             return;
+        setPlayer();
         foreach (playerStatChange psc in playerStatChangeEvents)
         {
             if (eventName == psc.eventToListenFor)

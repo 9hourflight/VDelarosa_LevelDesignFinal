@@ -7,6 +7,7 @@ public class EventListener_HideShow : MonoBehaviour
 	public bool startHidden;
 	private bool isHidden;
 	public bool includeCollision;
+	public bool includeChildren = true;
     [Header("Event Listening")]
     public string hideEventName;
 	public string showEventName;
@@ -54,11 +55,19 @@ public class EventListener_HideShow : MonoBehaviour
     public void hide()
     {
         isHidden = true;
-        HelperFunctions.hideObjectAndChildren(this.gameObject);
-        /*if (_renderer != null)
+		if (includeChildren)
+			HelperFunctions.hideObjectAndChildren(this.gameObject);
+		else
+			HelperFunctions.hideObject(this.gameObject);
+		/*if (_renderer != null)
             _renderer.enabled = false;*/
-        if (includeCollision)
-            HelperFunctions.disableCollisionObjectAndChildren(this.gameObject);
+		if (includeCollision)
+		{
+			if(includeChildren)
+				HelperFunctions.disableCollisionObjectAndChildren(this.gameObject);
+			else
+                HelperFunctions.disableCollisionObject(this.gameObject);
+        }
     }
 
 	private void hideOnEvent(string eventName, GameObject obj)

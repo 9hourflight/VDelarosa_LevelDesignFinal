@@ -22,24 +22,24 @@ public static class HelperFunctions
         
     }
 
-    public static void hideObjectAndChildren(GameObject go)
-	{        
-		Component h;
+	public static void hideObject(GameObject go)
+	{
+        Component h;
         NavMeshObstacle obs;
-		Renderer r;
-		ParticleSystem ps;
-		Light l;
-		if(go == null)
-			return;		
-		int i;
-		if (go.name.ToLower() == "torchbase")
-			i = 0;
+        Renderer r;
+        ParticleSystem ps;
+        Light l;
+        if (go == null)
+            return;
+        int i;
+        if (go.name.ToLower() == "torchbase")
+            i = 0;
         //go.SetActive(false);		
         if (go.TryGetComponent<Renderer>(out r))
         {
             r.enabled = false;
         }
-		/*h = go.GetComponent("Halo");
+        /*h = go.GetComponent("Halo");
 		if(h != null)
         
         if (go.TryGetComponent(typeof("Halo"),out h) )
@@ -47,11 +47,11 @@ public static class HelperFunctions
 			h.GetType().GetProperty("enabled").SetValue(h, false, null);
 		}*/
 
-        if(go.TryGetComponent<NavMeshObstacle>(out obs))
-        { 
-        /*obs = go.GetComponent<NavMeshObstacle>();
-        if (obs != null)
-        {*/
+        if (go.TryGetComponent<NavMeshObstacle>(out obs))
+        {
+            /*obs = go.GetComponent<NavMeshObstacle>();
+            if (obs != null)
+            {*/
             obs.enabled = false;
         }
 
@@ -59,16 +59,21 @@ public static class HelperFunctions
 		if(ps != null)*/
         if (go.TryGetComponent<ParticleSystem>(out ps))
         {
-			ps.Stop();
-		}			
+            ps.Stop();
+        }
 
 
-		/*l = go.GetComponent<Light>();
+        /*l = go.GetComponent<Light>();
 		if(l != null)*/
         if (go.TryGetComponent<Light>(out l))
         {
-			l.enabled = false;
-		}
+            l.enabled = false;
+        }
+    }
+    public static void hideObjectAndChildren(GameObject go)
+	{
+
+        hideObject(go);
 
 		foreach(Transform child in go.GetComponentInChildren<Transform>())
 		{
@@ -125,13 +130,18 @@ public static class HelperFunctions
 
 	}
 
-	public static void disableCollisionObjectAndChildren(GameObject go)
-	{
-		if(go == null)
-			return;		
+    public static void disableCollisionObject(GameObject go)
+    {
+        if (go == null)
+            return;
 
-		if(go.GetComponent<Collider>() != null)
-			go.GetComponent<Collider>().enabled = false;
+        if (go.GetComponent<Collider>() != null)
+            go.GetComponent<Collider>().enabled = false;
+        
+    }
+    public static void disableCollisionObjectAndChildren(GameObject go)
+	{
+        disableCollisionObject(go);
 
 		foreach(Collider c in go.GetComponentsInChildren<Collider>())
 		{						

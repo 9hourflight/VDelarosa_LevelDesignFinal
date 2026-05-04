@@ -21,6 +21,8 @@ public class PlatformRiderBehavior : MonoBehaviour
     AdvancedMoverBehavior amb;
 	Rigidbody stoodOnRB;
 	ConveyorBehavior tmb;
+
+	float _playerHeight,_playerRadius;
     //platCheckInfo platInfo;
     RaycastHit hitInfo;
     // Use this for initialization
@@ -34,7 +36,13 @@ public class PlatformRiderBehavior : MonoBehaviour
         crb=null;
         amb=null;
 		tmb = null;
-    }
+
+		//some assumptions here. working quick and dirty
+		CapsuleCollider playerCapsule = GetComponent<CapsuleCollider>();
+		_playerRadius = playerCapsule.radius;
+		_playerHeight = playerCapsule.height;
+
+	}
 	
 	// Update is called once per frame
 	void FixedUpdate () 
@@ -48,7 +56,8 @@ public class PlatformRiderBehavior : MonoBehaviour
 
         if (fpsc != null)
 		{
-            hitInfo = fpsc.platformCheck(1.05f);
+            //hitInfo = fpsc.platformCheck(1.05f);
+			hitInfo = fpsc.platformCheck(_playerHeight/2 + 0.05f);
 			if ((hitInfo.transform != null )) // &&(!isStatic))
 			{
 				//if(!hitInfo.transform.gameObject.isStatic)

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.AI;
 using UnityEditor;
 using UnityEngine.Serialization;
+using UnityEngine.Events;
 
 public enum BehaviorType { attacking, patrolling, following, fleeing, idle, none, distracted };
 public enum AttitudeType { neutral, aggressive, fearful, friendly };
@@ -140,6 +141,7 @@ public class NPCBehavior : MonoBehaviour
     [Tooltip("Events that will change this NPC's health")]
     public List<HealthChangeEventEntry> healthChangeEvents;
     public List<EventPackage> eventsToSendOnDeath;
+    public UnityEvent OnDeath;
 
     private bool _isAlive = false;
     public bool isAlive
@@ -382,8 +384,10 @@ public class NPCBehavior : MonoBehaviour
         }
 
         //Hide the indicators for the NPCs suspicion
-        HelperFunctions.hideObjectAndChildren(suspicionIndicator);
-        HelperFunctions.hideObjectAndChildren(alertedIndicator);
+        if(suspicionIndicator!=null)
+            HelperFunctions.hideObjectAndChildren(suspicionIndicator);
+        if(alertedIndicator!=null)
+            HelperFunctions.hideObjectAndChildren(alertedIndicator);
 
         agent = GetComponent<NavMeshAgent>();
         if (agent == null)
@@ -649,7 +653,7 @@ public class NPCBehavior : MonoBehaviour
         }
     }
 
-    private void setPatrol(NavPointContainer navContainer, PatrolSwitchBehaviorType psb = PatrolSwitchBehaviorType.pickFirst)
+    public void setPatrol(NavPointContainer navContainer, PatrolSwitchBehaviorType psb = PatrolSwitchBehaviorType.pickFirst)
     { //Patrol stuff
         int psbIndex = 0;
         int oldNavIndex = currentPointIndex;
@@ -924,6 +928,7 @@ public class NPCBehavior : MonoBehaviour
                 {
                     EventRegistry.SendEvent(ep, this.gameObject);
                 }
+                OnDeath.Invoke();
             }
         }
     }

@@ -6,14 +6,14 @@ using UnityEngine.UI;
 
 public enum operationType { set, add, subtract, multiply, divide };
 public enum locomotionType { walking, jumping, falling, climbing, mantling, swimming };
-public enum playerStatType { health, walkSpeed, runSpeed, jumpCount, jumpForce, visibility }; //, incomingDamageMultiplier, throwForce};
+public enum playerStatType { health, walkSpeed, runSpeed, jumpCount, jumpForce, visibility, hoverForce }; //, incomingDamageMultiplier, throwForce};
 public enum DebugMode { none, flying, flyingNoclip };
 
 [Serializable]
 public class playerStatChange
 {
     public string eventToListenFor;
-    public int amount;
+    public float amount;
     public operationType operation;
     public playerStatType playerStatToChange;
 }
@@ -114,7 +114,13 @@ public class GAME1304PlayerController : MonoBehaviour
     private bool isFalling = false;
     private float fallApex = 0;
     private float lastYValue;
+    [Tooltip("Force exerted if the player holds jump while falling. Usually paired with powerups for 'glide'. ")]
+    public float hoverForce = 0;
+    [Tooltip("If the player is gliding, this is how fast they have to be falling to take damage, vs the set kill height")]
+    public float glideVelocityDamageThreshold = 14f;
+    private bool isGliding = false;
 
+    private float fallDamageNegationThreshold = 90;
     private bool isJumping = false;
     private bool isMantling = false;
     private Vector3 mantleDestination;
@@ -245,6 +251,7 @@ public class GAME1304PlayerController : MonoBehaviour
     private Collider playerCollider;
     private bool isGrounded = true;
     private bool isRunning = false;
+
 
     private ObjectOfInterest tempoi;
 
@@ -948,6 +955,7 @@ public class GAME1304PlayerController : MonoBehaviour
             }
 
             applyJumpForce = false;
+            isGliding = false;
             if (Input.GetButton("Jump") && !_isCrouching && !isMantling)
             {
                 if (currentLocomotionMode == locomotionType.climbing)
@@ -969,7 +977,11 @@ public class GAME1304PlayerController : MonoBehaviour
                         isFalling = false;
                     }
                 }                    
-
+                if(isFalling && jumpsRemaining <=0)
+                {
+                    playerRB.AddForce(Vector3.up * hoverForce);
+                    isGliding = true;
+                }
             }
 
             if(Input.GetButtonUp("Jump"))
@@ -1443,12 +1455,13 @@ public class GAME1304PlayerController : MonoBehaviour
 
         //hard coding radius and player half height
         //cast at eye level
-        Physics.SphereCast(transform.position + new Vector3(0, 0.25f, 0), 0.35f, transform.forward, out hitInfo1,
-            0.5f, mask.value, QueryTriggerInteraction.Ignore);
+        //Physics.SphereCast(transform.position + new Vector3(0, playerRadius/2  0.25f, 0), 0.35f, transform.forward, out hitInfo1,
+        Physics.SphereCast(transform.position + new Vector3(0, playerRadius/2, 0), playerRadius/1.5f, transform.forward, out hitInfo1,
+            playerRadius, mask.value, QueryTriggerInteraction.Ignore);
 
         //cast at waist level
-        Physics.SphereCast(transform.position, 0.35f, Vector3.down, out hitInfo2,
-            0.5f, mask.value, QueryTriggerInteraction.Ignore);
+        Physics.SphereCast(transform.position, playerRadius/1.5f, Vector3.down, out hitInfo2,
+            playerRadius, mask.value, QueryTriggerInteraction.Ignore);
 
         return (hitInfo1.collider != null || hitInfo2.collider != null);
 
@@ -1504,11 +1517,17 @@ public class GAME1304PlayerController : MonoBehaviour
             { //TODO: check grounded here to make sure the player hit their feet
                 float fallDistance = (fallApex - transform.position.y);
                 //Debug.Log("Fall distance: " + fallDistance);
+                Debug.Log("Fall speed: " + collision.relativeVelocity);
+
                 if ((fallDistance >= (killHeight)) && (debugmode == DebugMode.none))
                 {
                     //TODO: replace this with a more robust damage model based on height
                     if (collision.gameObject.GetComponent<PaddedSurfaceBehavior>() == null)
-                        takeDamage(health, signalTypes.scriptedDamage);
+                    {
+                        if ((collision.relativeVelocity.y > glideVelocityDamageThreshold) || (!isGliding))
+                            takeDamage(health, signalTypes.physics);
+                        
+                    }
                     
                 }
 
@@ -1537,17 +1556,21 @@ public class GAME1304PlayerController : MonoBehaviour
     {
         RaycastHit groundedCast;
         
-            groundedCast = checkGrounded();
-            if (groundedCast.collider != null)
-            { //TODO: check grounded here to make sure the player hit their feet
-                float fallDistance = (fallApex - transform.position.y);
-                //Debug.Log("Fall distance: " + fallDistance);
-                if ((fallDistance >= (killHeight)) && (debugmode == DebugMode.none))
+        groundedCast = checkGrounded();
+        if (groundedCast.collider != null)
+        { //TODO: check grounded here to make sure the player hit their feet
+            float fallDistance = (fallApex - transform.position.y);
+        //Debug.Log("Fall distance: " + fallDistance);
+            if ((fallDistance >= (killHeight)) && (debugmode == DebugMode.none))
+            {
+                //TODO: replace this with a more robust damage model based on height
+                if (collision.gameObject.GetComponent<PaddedSurfaceBehavior>() == null)
                 {
-                    //TODO: replace this with a more robust damage model based on height
-                    if (collision.gameObject.GetComponent<PaddedSurfaceBehavior>() == null)
-                        takeDamage(health, signalTypes.scriptedDamage);
+                    //check for gliding
+                    if((collision.relativeVelocity.y > glideVelocityDamageThreshold)||(!isGliding))
+                        takeDamage(health, signalTypes.physics);
                 }
+            }
 
 
             SetFallApex(lastYValue);
@@ -1635,24 +1658,44 @@ public class GAME1304PlayerController : MonoBehaviour
     {
         switch (psc.playerStatToChange)
         {
+            case playerStatType.hoverForce:
+                switch (psc.operation)
+                {
+                    case operationType.add:
+                        hoverForce += psc.amount;
+                        break;
+                    case operationType.multiply:
+                        hoverForce *= psc.amount;
+                        break;
+                    case operationType.set:
+                        hoverForce = psc.amount;                        
+                        break;
+                    case operationType.subtract:
+                        hoverForce -= psc.amount;
+                        break;
+                    case operationType.divide:
+                        hoverForce /= psc.amount;
+                        break;
+                }
+                break;
             case playerStatType.health:
                 switch (psc.operation)
                 {
                     case operationType.add:
-                        currentHealth += psc.amount;
+                        currentHealth = (int)(currentHealth+ psc.amount);
                         break;
                     case operationType.multiply:
-                        currentHealth *= psc.amount;
+                        currentHealth = (int)(currentHealth * psc.amount);
                         break;
                     case operationType.set:
-                        currentHealth = psc.amount;
+                        currentHealth = (int)psc.amount;
                         takeDamage(0, signalTypes.scriptedDamage);
                         break;
                     case operationType.subtract:
-                        takeDamage(psc.amount, signalTypes.scriptedDamage);
+                        takeDamage((int)psc.amount, signalTypes.scriptedDamage);
                         break;
                     case operationType.divide:
-                        currentHealth /= psc.amount;
+                        currentHealth = (int)(currentHealth/ psc.amount);
                         break;
                 }
                 break;
@@ -1680,40 +1723,40 @@ public class GAME1304PlayerController : MonoBehaviour
                 switch (psc.operation)
                 {
                     case operationType.add:
-                        jumpCount += psc.amount;
-                        jumpsRemaining += psc.amount;
+                        jumpCount += (int)psc.amount;
+                        jumpsRemaining += (int) psc.amount;
                         if (jumpCount < 0)
                             jumpCount = 0;
                         if (jumpsRemaining < 0)
                             jumpsRemaining = 0;
                         break;
                     case operationType.multiply:
-                        jumpCount *= psc.amount;
-                        jumpsRemaining *= psc.amount;
+                        jumpCount *= (int) psc.amount;
+                        jumpsRemaining *= (int) psc.amount;
                         if (jumpCount < 0)
                             jumpCount = 0;
                         if (jumpsRemaining < 0)
                             jumpsRemaining = 0;
                         break;
                     case operationType.set:
-                        jumpCount = psc.amount;
-                        jumpsRemaining = psc.amount;
+                        jumpCount = (int) psc.amount;
+                        jumpsRemaining = (int) psc.amount;
                         if (jumpCount < 0)
                             jumpCount = 0;
                         if (jumpsRemaining < 0)
                             jumpsRemaining = 0;
                         break;
                     case operationType.subtract:
-                        jumpCount -= psc.amount;
-                        jumpsRemaining -= psc.amount;
+                        jumpCount -= (int) psc.amount;
+                        jumpsRemaining -= (int) psc.amount;
                         if (jumpCount < 0)
                             jumpCount = 0;
                         if (jumpsRemaining < 0)
                             jumpsRemaining = 0;
                         break;
                     case operationType.divide:
-                        jumpCount /= psc.amount;
-                        jumpsRemaining /= psc.amount;
+                        jumpCount /= (int) psc.amount;
+                        jumpsRemaining /= (int) psc.amount;
                         if (jumpCount < 0)
                             jumpCount = 0;
                         if (jumpsRemaining < 0)

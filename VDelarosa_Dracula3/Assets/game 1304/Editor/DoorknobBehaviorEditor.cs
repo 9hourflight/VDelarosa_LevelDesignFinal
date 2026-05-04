@@ -19,6 +19,8 @@ public class DoorknobBehaviorEditor : Editor
     EditorGUILayout.PropertyField(serializedObject.FindProperty("quantityRequired"));
     EditorGUILayout.PropertyField(serializedObject.FindProperty("consumeKeyOnUse"));
 
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("eventsToSend"));
+
         EditorGUILayout.PropertyField(serializedObject.FindProperty("eventToLock"));
     EditorGUILayout.PropertyField(serializedObject.FindProperty("eventToUnlock"));
     EditorGUILayout.PropertyField(serializedObject.FindProperty("eventToOpen"));
